@@ -1,0 +1,14 @@
+# Debug symbols (macOS)
+*.dSYM/
+
+
+# Object files
+*.o
+*.obj
+
+# AddressSanitizer / build artifacts
+*.out
+
+# Editor/OS files
+.DS_Store
+*.swp
