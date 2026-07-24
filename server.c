@@ -5,10 +5,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <stdint.h>
 
 #define CONNECTIONS_WAITING 10
 
-void set_addr_info(struct addrinfo* hints, int* get_addr_info_status, struct addrinfo** server_info) {
+void resolve_server_address(struct addrinfo* hints, int* get_addr_info_status, struct addrinfo** server_info) {
     memset(hints, 0, sizeof(struct addrinfo));
     hints->ai_family = AF_UNSPEC;
     hints->ai_socktype = SOCK_STREAM;
@@ -20,7 +21,7 @@ void set_addr_info(struct addrinfo* hints, int* get_addr_info_status, struct add
     }
 }
 
-void get_available_connection(struct addrinfo* server_info, int* socket_file_descriptor) {
+void create_listening_socket(struct addrinfo* server_info, int* socket_file_descriptor) {
     int reuse_addr = 1;
     struct addrinfo* addr;
 
@@ -52,9 +53,21 @@ void get_available_connection(struct addrinfo* server_info, int* socket_file_des
     freeaddrinfo(server_info);
 }
 
+void listen_socket(int socket_file_descriptor) {
+    if(listen(socket_file_descriptor, CONNECTIONS_WAITING) == -1) {
+        perror("server: listen");
+        exit(1);
+    }
+
+    printf("server: waiting for connections...\n");
+}
+
 void* handle_client(void* args) {
     // reverse the cast: void* -> intptr_t -> int, to get back the file descriptor
     int new_file_descriptor= (int)(intptr_t) args;
+
+
+    return NULL;
 }
 
 void accept_new_connections(int socket_file_descriptor) {
@@ -90,21 +103,13 @@ int main(void) {
     struct addrinfo hints;
     struct addrinfo* server_info;
     int get_addr_info_status;
-    int socket_file_descriptor;
+    int listening_socket_fd;
 
-    set_addr_info(&hints, &get_addr_info_status, &server_info);
-    get_available_connection(server_info, &socket_file_descriptor);
-    
+    resolve_server_address(&hints, &get_addr_info_status, &server_info);
+    create_listening_socket(server_info, &listening_socket_fd);
+    listen_socket(listening_socket_fd);
+    accept_new_connections(listening_socket_fd);
 
-    if(listen(socket_file_descriptor, CONNECTIONS_WAITING) == -1) {
-        perror("server: listen");
-        exit(1);
-    }
-
-    printf("server: waiting for connections...\n");
-
-    accept_new_connections(socket_file_descriptor);
-
-    close(socket_file_descriptor);
+    close(listening_socket_fd);
     return EXIT_SUCCESS;
 }
