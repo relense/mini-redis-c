@@ -90,7 +90,8 @@ void* handle_client(void* args) {
             continue;
         } else {
             // based on the command decide what should we do, if store, get the info, or delete the info
-            // then enconde the info we want to send the user
+            
+            // then encode the info we want to send the user
             // then send a response with the enconded data back to the user.
             // this is to be done after we have the resp protocol and the hashmap implemented.
             break;
