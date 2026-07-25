@@ -13,7 +13,7 @@ typedef struct {
     parse_status status;
     char* cmd_name;
     char** buffer;
-    int argc;
+    size_t argc;
     size_t bytes_consumed;
 } parsed_cmd;
 
