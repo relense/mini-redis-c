@@ -20,7 +20,8 @@ Implements a subset of [RESP (REdis Serialization Protocol)](https://redis.io/do
 ## Architecture
 
 - TCP server (sockets, one thread per client connection)
-- RESP parser (decodes incoming byte streams into commands and arguments)
+- Byte buffer (dynamically growing buffer that accumulates incoming bytes across multiple recv() calls until a complete message is available)
+- RESP parser (decodes accumulated bytes into commands and arguments)
 - RESP encoder (formats command results back into valid RESP replies)
 - In-memory storage (thread-safe hash map)
 
