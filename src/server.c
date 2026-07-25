@@ -8,9 +8,9 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include "resp-protocol.h"
+#include "byte-buffer.h"
 
 #define CONNECTIONS_WAITING 10
-#define MAXDATASIZE 1024
 
 void resolve_server_address(struct addrinfo* hints, int* get_addr_info_status, struct addrinfo** server_info) {
     memset(hints, 0, sizeof(struct addrinfo));
@@ -69,13 +69,19 @@ void* handle_client(void* args) {
     // reverse the cast: void* -> intptr_t -> int, to get back the file descriptor
     int new_file_descriptor= (int)(intptr_t) args;
     ssize_t recv_bytes = 0;
-    size_t total_recv_bytes = 0;
-    char buf[MAXDATASIZE];
-    parsed_cmd* cmd;
+    byte_buffer bbufer;
+    parsed_cmd* cmd = NULL;
+    char buffer[1024];
 
-    while((recv_bytes = recv(new_file_descriptor, buf + total_recv_bytes, MAXDATASIZE - total_recv_bytes - 1, 0)) > 0) {
-        cmd = parse_cmd(buf, recv_bytes);
-        total_recv_bytes += recv_bytes;
+    byte_buffer_init(&bbufer, 0);
+
+    while((recv_bytes = recv(new_file_descriptor, buffer, sizeof(buffer), 0)) > 0) {
+        if(cmd) free_parsed_cmd(cmd);
+        if(!byte_buffer_append(&bbufer, buffer, recv_bytes)) {
+            break;
+        }
+
+        cmd = parse_cmd(bbufer.data, bbufer.len);
 
         if(cmd->status == PARSE_ERROR) {
             perror("server: error parsing cmd");
@@ -83,13 +89,18 @@ void* handle_client(void* args) {
         } else if (cmd->status == PARSE_INCOMPLETE) {
             continue;
         } else {
+            // based on the command decide what should we do, if store, get the info, or delete the info
+            // then enconde the info we want to send the user
+            // then send a response with the enconded data back to the user.
+            // this is to be done after we have the resp protocol and the hashmap implemented.
             break;
         }
     }
 
-
+    byte_buffer_destroy(&bbufer);
+    if(cmd) free_parsed_cmd(cmd);
     close(new_file_descriptor);
-    prinf("server: client disconnected, waiting for new connections...\n");
+    printf("server: client disconnected, waiting for new connections...\n");
 
     return NULL;
 }
