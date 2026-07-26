@@ -1,5 +1,6 @@
 #include "byte-buffer.h"
 #include <string.h>
+#include <stdlib.h>
 
 static byte_buffer* byte_buffer_resize(byte_buffer* bbuffer, size_t cap) {
     if(bbuffer && cap > 0 && cap >= bbuffer->len) {
