@@ -32,7 +32,7 @@ In progress. Currently building on the echo server foundation from `systems-prog
 ## Compile
 
 ```bash
-gcc -Wall -Wextra -Werror -std=c17 -fsanitize=address -g -o mini-redis src/*.c -lpthread
+gcc -Wall -Wextra -Werror -std=c17 -fsanitize=address -g -o mini-redis.out src/*.c -lpthread
 ```
 
 - **gcc** - The compiler. The program that transforms C into an executable.
