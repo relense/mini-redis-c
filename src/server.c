@@ -65,6 +65,21 @@ void listen_socket(int socket_file_descriptor) {
     printf("server: waiting for connections...\n");
 }
 
+void printf_buffer(const byte_buffer* bbufer) {
+   printf("Received %zu bytes: ", bbufer->len);
+        for(size_t i = 0; i < bbufer->len; i++) {
+            if(bbufer->data[i] == '\r') {
+                printf("\\r");
+            } else if (bbufer->data[i] == '\n') {
+                printf("\\n");
+            } else {
+                printf("%c", bbufer->data[i]);
+            }
+        }
+
+        printf("\n");
+}
+
 void* handle_client(void* args) {
     // reverse the cast: void* -> intptr_t -> int, to get back the file descriptor
     int new_file_descriptor= (int)(intptr_t) args;
@@ -81,6 +96,8 @@ void* handle_client(void* args) {
             break;
         }
 
+        printf_buffer(&bbufer);
+ 
         cmd = parse_cmd(bbufer.data, bbufer.len);
 
         if(cmd->status == PARSE_ERROR) {
