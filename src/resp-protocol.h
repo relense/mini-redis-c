@@ -15,7 +15,7 @@ typedef struct {
     char* cmd_name;
     char** buffer;
     size_t* arg_lengths;
-    size_t argc;
+    unsigned long argc;
     size_t bytes_consumed;
 } parsed_cmd;
 
