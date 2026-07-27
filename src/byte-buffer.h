@@ -39,4 +39,11 @@ void byte_buffer_destroy(byte_buffer* bbuffer);
 */
 byte_buffer* byte_buffer_append(byte_buffer* bbuffer, const char* data, size_t byte_len);
 
+/*
+* Resets the buffer's len to 0, allowing it to be reused without a new
+* allocation. The underlying data and cap are left untouched; the next
+* byte_buffer_append call will simply start overwriting from position 0.
+*/
+void byte_buffer_reset(byte_buffer* bbuffer);
+
 #endif

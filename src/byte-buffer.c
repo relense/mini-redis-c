@@ -76,3 +76,9 @@ byte_buffer* byte_buffer_append(byte_buffer* bbuffer, const char* data, size_t b
 
     return NULL;
 }
+
+void byte_buffer_reset(byte_buffer* bbuffer) {
+    if(bbuffer) {
+        bbuffer->len = 0;
+    }
+}
