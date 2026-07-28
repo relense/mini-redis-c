@@ -14,9 +14,12 @@ typedef struct {
     parse_status status;
     char* cmd_name;
     char** buffer;
-    unsigned long * arg_lengths;
+    unsigned long* arg_lengths;
     unsigned long argc;
-    unsigned long bytes_consumed;
+    // Total bytes consumed from the ORIGINAL raw buffer to parse this command,
+    // including all RESP syntax (*N\r\n, $M\r\n, trailing \r\n of each element).
+    // NOT the same as the sum of arg_lengths, which only counts extracted content.
+    size_t bytes_consumed;
 } parsed_cmd;
 
 typedef struct {
