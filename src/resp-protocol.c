@@ -5,7 +5,23 @@
 #include <stdbool.h>
 #include "byte-buffer.h"
 
-static bool get_number_of_args(bool* checking_number_args, const char* buffer, const size_t index, byte_buffer* temp_buffer, parsed_cmd* cmd ) {
+static bool set_parse_type(const char* buffer, const size_t index, bool* checking_number_args, bool* checking_arg) {
+    // if we are getting the number of argc
+    if(buffer[index] == '*') {
+        *checking_number_args = true;
+        return true;
+    }
+
+    // if we are checking an argument
+    if(buffer[index] == '$') {
+        *checking_arg = true;
+        return true;
+    }
+
+    return false;
+}
+
+static bool get_number_of_args(bool* checking_number_args, const char* buffer, const size_t index, byte_buffer* temp_buffer, parsed_cmd* cmd) {
     if(*checking_number_args) {
         if(buffer[index] != '\n' && buffer[index] != '\r') {
             byte_buffer_append(temp_buffer, &buffer[index], 1);
@@ -38,6 +54,17 @@ static bool get_number_of_args(bool* checking_number_args, const char* buffer, c
     return true;
 }
 
+static void print_buffer(parsed_cmd* cmd) {
+    for(size_t k = 0; k < cmd->argc; k++) {
+        for(size_t t = 0; t < cmd->arg_lengths[k]; t++) {
+            printf("%c", cmd->buffer[k][t]);
+        } 
+            printf(" ");
+    }
+
+    printf("\n");
+}
+
 parsed_cmd* parse_cmd(char* buffer, size_t buffer_len) {
     if(buffer) {
         parsed_cmd* cmd = malloc(sizeof(parsed_cmd));
@@ -56,17 +83,7 @@ parsed_cmd* parse_cmd(char* buffer, size_t buffer_len) {
         size_t new_line_count = 0;
 
         for(i = 0; i < buffer_len; i++) {
-            // if we are getting the number of argc
-            if(buffer[i] == '*') {
-                checking_number_args = true;
-                continue;
-            }
-
-            // if we are checking an argument
-            if(buffer[i] == '$') {
-                checking_arg = true;
-                continue;
-            }
+            if(set_parse_type(buffer, i, &checking_number_args, &checking_arg)) continue;
 
             // getting the number of arguments
             if(!get_number_of_args(&checking_number_args, buffer, i, &temp_buffer, cmd)) return NULL;
@@ -144,20 +161,9 @@ parsed_cmd* parse_cmd(char* buffer, size_t buffer_len) {
             cmd->status = PARSE_COMPLETE;
         }
 
+        print_buffer(cmd);
+
         byte_buffer_destroy(&temp_buffer);
-
-        
-        for(size_t k = 0; k < cmd->argc; k++) {
-            printf("CURRENT K %zu\n", k);
-            printf("ARG VALUE %lu\n", cmd->arg_lengths[k]);
-            for(size_t t = 0; t < cmd->arg_lengths[k]; t++) {
-                printf("%c", cmd->buffer[k][t]);
-            } 
-             printf("\n");
-        }
-
-        printf("\n");
-
         return cmd;
     }
 
