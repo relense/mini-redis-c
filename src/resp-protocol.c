@@ -22,128 +22,148 @@ typedef enum {
     READ_ARG_DATA
 } parse_cmd_state;
 
-static arg_parse_result get_number_of_args(bool* checking_number_args, const char* buffer, const size_t index, byte_buffer* temp_buffer, parsed_cmd* cmd) {
-    if(buffer[index] != '\n' && buffer[index] != '\r') {
-        if(!isdigit(buffer[index])) {
-            cmd->status = PARSE_ERROR;
-            byte_buffer_destroy(temp_buffer);
-            return STEP_SYNTAX_ERROR;
-        };
-
-        byte_buffer_append(temp_buffer, &buffer[index], 1);
-    } else if (buffer[index] == '\n') {
-        char terminator = '\0';
-        byte_buffer_append(temp_buffer, &terminator, 1);
-        char* endptr;
-        unsigned long num = strtoul(temp_buffer->data, &endptr, 10);
-
-        if(num == 0) {
-            cmd->status = PARSE_ERROR;
-            byte_buffer_destroy(temp_buffer);
-            return STEP_SYNTAX_ERROR;
-        }
-
-        cmd->argc = num - 1; 
-
-        cmd->buffer = malloc((cmd->argc) * sizeof(char*));
-        if(!cmd->buffer){
-            free_parsed_cmd(cmd);
-            byte_buffer_destroy(temp_buffer);
-            return STEP_ALLOC_FAILED;
-        }
-
-        cmd->arg_lengths = malloc((cmd->argc) * sizeof(unsigned long));
-        if(!cmd->arg_lengths) {
-            free_parsed_cmd(cmd);
-            byte_buffer_destroy(temp_buffer);
-            return STEP_ALLOC_FAILED;
-        }
-
-        *checking_number_args = false;
-        byte_buffer_reset(temp_buffer);
+static bool set_parse_type(const char* buffer, const size_t index, bool* checking_number_args, bool* checking_arg) {
+    // if we are getting the number of argc
+    if(buffer[index] == '*') {
+        *checking_number_args = true;
+        return true;
     }
 
-    return STEP_PROGRESS;
+    // if we are checking an argument
+    if(buffer[index] == '$') {
+        *checking_arg = true;
+        return true;
+    }
+
+    return false;
 }
 
-static arg_parse_result parse_argument(const char* buffer, const size_t index, size_t* current_arg, parsed_cmd* cmd, const size_t buffer_len, byte_buffer* temp_buffer, arg_parse_state* current_state) {
-    if(buffer[index] == '\n') { 
-        // if its the last arg, its the end of the resp parsing so save the bytes consumed
-        if(*current_arg == cmd->argc && *current_state == EXPECTING_CONTENT) {
-            cmd->bytes_consumed = buffer_len;
-        }
-
-        // if we have a cmd to save, save
-        // Should only pass here once
-        if(*current_arg == 0) {
-            if(*current_state == EXPECTING_LENGTH) {
-                *current_state = EXPECTING_CONTENT;
-                byte_buffer_reset(temp_buffer);
-                return STEP_ARG_COMPLETE;
-            }
-
-            cmd->cmd_name = malloc(temp_buffer->len + 1);
-            if(!cmd->cmd_name) {
-                free_parsed_cmd(cmd);
+static arg_parse_result get_number_of_args(bool* checking_number_args, const char* buffer, const size_t index, byte_buffer* temp_buffer, parsed_cmd* cmd) {
+    if(*checking_number_args) {
+        if(buffer[index] != '\n' && buffer[index] != '\r') {
+            if(!isdigit(buffer[index])) {
+                cmd->status = PARSE_ERROR;
                 byte_buffer_destroy(temp_buffer);
-                return STEP_ALLOC_FAILED;
-            }
+                return STEP_SYNTAX_ERROR;
+            };
 
-            memcpy(cmd->cmd_name, temp_buffer->data, temp_buffer->len);
-            cmd->cmd_name[temp_buffer->len] = '\0';
-
-            *current_state = EXPECTING_LENGTH;
-            *current_arg += 1;
-            byte_buffer_reset(temp_buffer);
-            return STEP_ARG_COMPLETE;
-        }
-
-        // means we have the bytes for the current arg we are parsing
-        if(*current_arg > 0 && *current_state == EXPECTING_LENGTH) {
+            byte_buffer_append(temp_buffer, &buffer[index], 1);
+        } else if (buffer[index] == '\n') {
             char terminator = '\0';
             byte_buffer_append(temp_buffer, &terminator, 1);
             char* endptr;
-            unsigned long current_num = strtoul(temp_buffer->data, &endptr, 10);
+            unsigned long num = strtoul(temp_buffer->data, &endptr, 10);
 
-            if(current_num == 0) {
+            if(num == 0) {
                 cmd->status = PARSE_ERROR;
                 byte_buffer_destroy(temp_buffer);
                 return STEP_SYNTAX_ERROR;
             }
 
-            cmd->arg_lengths[*current_arg - 1] = current_num;
+            cmd->argc = num - 1; 
 
-            *current_state = EXPECTING_CONTENT;
-            byte_buffer_reset(temp_buffer);
-            return STEP_ARG_COMPLETE;
-        }
-
-        // means we have an arg that is not a byte and that is not a cmd to save
-        // the current_arg - 1 is because current_arg = 0 is the arg for cmd but in the buffer we want the other args so we must start at 0.
-        if (*current_arg > 0 && *current_state == EXPECTING_CONTENT) { 
-            cmd->buffer[*current_arg - 1] = malloc(temp_buffer->len);
-            if(!cmd->buffer[*current_arg - 1]) { 
+            cmd->buffer = malloc((cmd->argc) * sizeof(char*));
+            if(!cmd->buffer){
                 free_parsed_cmd(cmd);
                 byte_buffer_destroy(temp_buffer);
                 return STEP_ALLOC_FAILED;
             }
-            memcpy(cmd->buffer[*current_arg - 1], temp_buffer->data, temp_buffer->len);
 
-            *current_state = EXPECTING_LENGTH;
-            *current_arg += 1;
+            cmd->arg_lengths = malloc((cmd->argc) * sizeof(unsigned long));
+            if(!cmd->arg_lengths) {
+                free_parsed_cmd(cmd);
+                byte_buffer_destroy(temp_buffer);
+                return STEP_ALLOC_FAILED;
+            }
+
+            *checking_number_args = false;
             byte_buffer_reset(temp_buffer);
-            return STEP_ARG_COMPLETE;
         }
     }
 
-    if(buffer[index] != '\n' && buffer[index] != '\r') {
-        if(*current_state == EXPECTING_LENGTH && !isdigit(buffer[index])) {
-            cmd->status = PARSE_ERROR;
-            byte_buffer_destroy(temp_buffer);
-            return STEP_SYNTAX_ERROR;
-        };
+    return STEP_PROGRESS;
+}
 
-        byte_buffer_append(temp_buffer, &buffer[index], 1);
+static arg_parse_result parse_argument(bool* checking_arg, const char* buffer, const size_t index, size_t* current_arg, parsed_cmd* cmd, const size_t buffer_len, byte_buffer* temp_buffer, arg_parse_state* current_state) {
+    if(*checking_arg) {
+        if(buffer[index] == '\n') { 
+            // if its the last arg, its the end of the resp parsing so save the bytes consumed
+            if(*current_arg == cmd->argc && *current_state == EXPECTING_CONTENT) {
+                cmd->bytes_consumed = buffer_len;
+            }
+
+            // if we have a cmd to save, save
+            // Should only pass here once
+            if(*current_arg == 0) {
+                if(*current_state == EXPECTING_LENGTH) {
+                    *current_state = EXPECTING_CONTENT;
+                    byte_buffer_reset(temp_buffer);
+                    return STEP_ARG_COMPLETE;
+                }
+
+                cmd->cmd_name = malloc(temp_buffer->len + 1);
+                if(!cmd->cmd_name) {
+                    free_parsed_cmd(cmd);
+                    byte_buffer_destroy(temp_buffer);
+                    return STEP_ALLOC_FAILED;
+                }
+
+                memcpy(cmd->cmd_name, temp_buffer->data, temp_buffer->len);
+                cmd->cmd_name[temp_buffer->len] = '\0';
+
+                *current_state = EXPECTING_LENGTH;
+                *current_arg += 1;
+                byte_buffer_reset(temp_buffer);
+                return STEP_ARG_COMPLETE;
+            }
+
+            // means we have the bytes for the current arg we are parsing
+            if(*current_arg > 0 && *current_state == EXPECTING_LENGTH) {
+                char terminator = '\0';
+                byte_buffer_append(temp_buffer, &terminator, 1);
+                char* endptr;
+                unsigned long current_num = strtoul(temp_buffer->data, &endptr, 10);
+
+                if(current_num == 0) {
+                    cmd->status = PARSE_ERROR;
+                    byte_buffer_destroy(temp_buffer);
+                    return STEP_SYNTAX_ERROR;
+                }
+
+                cmd->arg_lengths[*current_arg - 1] = current_num;
+
+                *current_state = EXPECTING_CONTENT;
+                byte_buffer_reset(temp_buffer);
+                return STEP_ARG_COMPLETE;
+            }
+
+            // means we have an arg that is not a byte and that is not a cmd to save
+            // the current_arg - 1 is because current_arg = 0 is the arg for cmd but in the buffer we want the other args so we must start at 0.
+            if (*current_arg > 0 && *current_state == EXPECTING_CONTENT) { 
+                cmd->buffer[*current_arg - 1] = malloc(temp_buffer->len);
+                if(!cmd->buffer[*current_arg - 1]) { 
+                    free_parsed_cmd(cmd);
+                    byte_buffer_destroy(temp_buffer);
+                    return STEP_ALLOC_FAILED;
+                }
+                memcpy(cmd->buffer[*current_arg - 1], temp_buffer->data, temp_buffer->len);
+
+                *current_state = EXPECTING_LENGTH;
+                *current_arg += 1;
+                byte_buffer_reset(temp_buffer);
+                return STEP_ARG_COMPLETE;
+            }
+        }
+
+        if(buffer[index] != '\n' && buffer[index] != '\r') {
+            if(*current_state == EXPECTING_LENGTH && !isdigit(buffer[index])) {
+                cmd->status = PARSE_ERROR;
+                byte_buffer_destroy(temp_buffer);
+                return STEP_SYNTAX_ERROR;
+            };
+
+            byte_buffer_append(temp_buffer, &buffer[index], 1);
+        }
     }
 
     return STEP_PROGRESS;
@@ -175,31 +195,30 @@ parsed_cmd* parse_cmd(char* buffer, size_t buffer_len) {
         }
 
         size_t i;
-        bool checking_number_args = true;
+        bool checking_number_args = false;
+        bool checking_arg = false;
         byte_buffer temp_buffer;
         byte_buffer_init(&temp_buffer, 0);
         size_t current_arg = 0;
         arg_parse_state current_state = EXPECTING_LENGTH;
 
         for(i = 0; i < buffer_len; i++) {
-            if(checking_number_args) {
-                arg_parse_result parse_number_args_result = get_number_of_args(&checking_number_args, buffer, i, &temp_buffer, cmd);
-                if(parse_number_args_result == STEP_ALLOC_FAILED) {
-                    return NULL;
-                } else if (parse_number_args_result == STEP_SYNTAX_ERROR) {
-                    return cmd;
-                }
+            if(set_parse_type(buffer, i, &checking_number_args, &checking_arg)) continue;
+
+            arg_parse_result parse_number_args_result = get_number_of_args(&checking_number_args, buffer, i, &temp_buffer, cmd);
+            if(parse_number_args_result == STEP_ALLOC_FAILED) {
+                return NULL;
+            } else if (parse_number_args_result == STEP_SYNTAX_ERROR) {
+                return cmd;
             }
 
-            if(!checking_number_args) {
-                arg_parse_result parse_result = parse_argument(buffer, i, &current_arg, cmd, buffer_len, &temp_buffer, &current_state);
-                if(parse_result == STEP_ARG_COMPLETE) {
-                    continue;
-                } else if (parse_result == STEP_ALLOC_FAILED) {
-                    return NULL;
-                } else if (parse_result == STEP_SYNTAX_ERROR) {
-                    return cmd;
-                }
+            arg_parse_result parse_result = parse_argument(&checking_arg, buffer, i, &current_arg, cmd, buffer_len, &temp_buffer, &current_state);
+            if(parse_result == STEP_ARG_COMPLETE) {
+                continue;
+            } else if (parse_result == STEP_ALLOC_FAILED) {
+                return NULL;
+            } else if (parse_result == STEP_SYNTAX_ERROR) {
+                return cmd;
             }
         }
 
