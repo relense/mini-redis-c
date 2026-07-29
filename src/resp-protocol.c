@@ -137,7 +137,8 @@ static arg_parse_result parse_argument(bool* checking_arg, const char* buffer, c
         // means we have an arg that is not a byte and that is not a cmd to save
         // the current_arg - 1 is because current_arg = 0 is the arg for cmd but in the buffer we want the other args so we must start at 0.
         if (*current_arg > 0 && *current_state == EXPECTING_CONTENT && *temp_byte_count == cmd->arg_lengths[*current_arg - 1]) { 
-            cmd->buffer[*current_arg - 1] = malloc(temp_buffer->len);
+            size_t alloc_size = temp_buffer->len > 0 ? temp_buffer->len : 1;
+            cmd->buffer[*current_arg - 1] = malloc(alloc_size);
             if(!cmd->buffer[*current_arg - 1]) { 
                 free_parsed_cmd(cmd);
                 byte_buffer_destroy(temp_buffer);
@@ -221,7 +222,7 @@ parsed_cmd* parse_cmd(char* buffer, size_t buffer_len) {
             if(parse_result == STEP_ARG_LEN_COMPLETE) {
                 continue;
             } else if(parse_result == STEP_ARG_CONTENT_COMPLETE) {
-                i +=2;
+                i++;
                 continue;
             } else if (parse_result == STEP_ALLOC_FAILED) {
                 return NULL;
