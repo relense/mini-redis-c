@@ -15,7 +15,7 @@ This is a "mini" Redis in the literal sense: it implements a single native data 
 
 ## Protocol
 
-Implements a subset of [RESP (REdis Serialization Protocol)](https://redis.io/docs/latest/develop/reference/protocol-spec/): simple strings, simple errors, bulk strings, and arrays. Clients send commands as an array of bulk strings; the server parses the command, executes it against the in-memory store, and encodes the result back into RESP.
+Implements a subset of [RESP (REdis Serialization Protocol)](https://redis.io/docs/latest/develop/reference/protocol-spec/): simple strings, simple errors, bulk strings, and arrays. Clients send commands as an array of bulk strings; the server parses the command, executes it against the in-memory store, and encodes the result back into RESP. Follows the simple request-response model (one command per round-trip);
 
 ## Architecture
 
