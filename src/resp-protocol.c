@@ -172,7 +172,7 @@ static arg_parse_result parse_argument(bool* checking_arg, const char* buffer, c
                 *temp_byte_count += 1;
                 byte_buffer_append(temp_buffer, &buffer[index], 1);
             }
-        } else if (*current_arg == 0 && *current_state == EXPECTING_CONTENT) {
+        } else if (*current_arg == 0 && *current_state == EXPECTING_CONTENT && buffer[index] != '\n' && buffer[index] != '\r') {
             byte_buffer_append(temp_buffer, &buffer[index], 1);
         }
     }
