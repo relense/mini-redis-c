@@ -55,7 +55,7 @@ static arg_parse_result get_number_of_args(bool* checking_number_args, const cha
             char* endptr;
             unsigned long num = strtoul(temp_buffer->data, &endptr, 10);
 
-            if(num == 0) {
+            if(num == 0 || endptr == temp_buffer->data) {
                 cmd->status = PARSE_ERROR;
                 byte_buffer_destroy(temp_buffer);
                 return STEP_SYNTAX_ERROR;
@@ -125,6 +125,12 @@ static arg_parse_result parse_argument(bool* checking_arg, const char* buffer, c
                 byte_buffer_append(temp_buffer, &terminator, 1);
                 char* endptr;
                 unsigned long current_num = strtoul(temp_buffer->data, &endptr, 10);
+
+                if(endptr == temp_buffer->data) {
+                    cmd->status = PARSE_ERROR;
+                    byte_buffer_destroy(temp_buffer);
+                    return STEP_SYNTAX_ERROR;
+                }
 
                 cmd->arg_lengths[*current_arg - 1] = current_num;
 
