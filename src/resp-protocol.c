@@ -126,13 +126,6 @@ static arg_parse_result parse_argument(bool* checking_arg, const char* buffer, c
                 char* endptr;
                 unsigned long current_num = strtoul(temp_buffer->data, &endptr, 10);
 
-                if(current_num == 0) {
-                    printf("O meu current_arg = %lu, o meu current_state = %d, o meu temp_buffer->data (%zu bytes) = %.*s\n", *current_arg, *current_state, temp_buffer->len, (int)temp_buffer->len, temp_buffer->data);
-                    cmd->status = PARSE_ERROR;
-                    byte_buffer_destroy(temp_buffer);
-                    return STEP_SYNTAX_ERROR;
-                }
-
                 cmd->arg_lengths[*current_arg - 1] = current_num;
 
                 *current_state = EXPECTING_CONTENT;
