@@ -27,7 +27,7 @@ Implements a subset of [RESP (REdis Serialization Protocol)](https://redis.io/do
 
 ## Status
 
-In progress. Currently building on the echo server foundation from `systems-programming-journey`.
+RESP parser complete and tested (including binary-safe content, empty strings, and syntax error handling). Currently building the response encoder and command execution layer (SET/GET/DEL against the hash map).
 
 ## Compile
 
