@@ -160,17 +160,6 @@ static arg_parse_result parse_argument(bool* checking_arg, const char* buffer, c
     return STEP_PROGRESS;
 }
 
-static void print_buffer(parsed_cmd* cmd) {
-    for(size_t k = 0; k < cmd->argc; k++) {
-        for(size_t t = 0; t < cmd->arg_lengths[k]; t++) {
-            printf("%c", cmd->buffer[k][t]);
-        } 
-            printf(" ");
-    }
-
-    printf("\n");
-}
-
 parsed_cmd* parse_cmd(char* buffer, size_t buffer_len) {
     if(buffer) {
         parsed_cmd* cmd = malloc(sizeof(parsed_cmd));
@@ -224,13 +213,6 @@ parsed_cmd* parse_cmd(char* buffer, size_t buffer_len) {
 
         if(current_arg == cmd->argc + 1) {
             cmd->status = PARSE_COMPLETE;
-            print_buffer(cmd);
-
-            printf("status=%d\n argc=%lu\n cmd_name=%s\n bytes_consumed=%zu\n", cmd->status, cmd->argc, cmd->cmd_name, cmd->bytes_consumed);
-
-            for(size_t k = 0; k < cmd->argc; k++) {
-                printf("  arg[%zu] (len=%lu): %.*s\n", k, cmd->arg_lengths[k], (int)cmd->arg_lengths[k], cmd->buffer[k]);
-            }
         }
 
         byte_buffer_destroy(&temp_buffer);
