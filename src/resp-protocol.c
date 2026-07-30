@@ -39,6 +39,7 @@ static bool set_parse_type(const char* buffer, const size_t index, bool* checkin
     return false;
 }
 
+// parses the number of arguments inside the buffer. This is usefull to know what argument we are parsing at a given time
 static arg_parse_result get_number_of_args(bool* checking_number_args, const char* buffer, const size_t index, byte_buffer* temp_buffer, parsed_cmd* cmd) {
     if(*checking_number_args) {
         if(buffer[index] != '\n' && buffer[index] != '\r') {
@@ -214,6 +215,7 @@ parsed_cmd* parse_cmd(char* buffer, size_t buffer_len) {
         arg_parse_state current_state = EXPECTING_LENGTH;
         size_t temp_byte_count = 0;
 
+        // lets go through the buffer to find the elements we need
         for(i = 0; i < buffer_len; i++) {
             if(set_parse_type(buffer, i, &checking_number_args, &checking_arg)) continue;
 
