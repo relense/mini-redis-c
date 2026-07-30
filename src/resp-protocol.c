@@ -23,6 +23,9 @@ typedef enum {
     READ_ARG_DATA
 } parse_cmd_state;
 
+#define MAX_ARGS 50
+#define MAX_ARGS_LENGTH (1024 * 1024) //equivalent in bytes to 1MB
+
 // parses the number of arguments inside the buffer. This is usefull to know what argument we are parsing at a given time
 static arg_parse_result get_number_of_args(bool* checking_number_args, const char* buffer, const size_t index, byte_buffer* temp_buffer, parsed_cmd* cmd) {
     if(*checking_number_args) {
@@ -39,7 +42,7 @@ static arg_parse_result get_number_of_args(bool* checking_number_args, const cha
             char* endptr;
             unsigned long num = strtoul(temp_buffer->data, &endptr, 10);
 
-            if(num == 0 || endptr == temp_buffer->data) {
+            if(num == 0 || endptr == temp_buffer->data || num > MAX_ARGS) {
                 byte_buffer_destroy(temp_buffer);
                 return STEP_SYNTAX_ERROR;
             }
@@ -106,7 +109,7 @@ static arg_parse_result parse_argument(bool* checking_arg, const char* buffer, c
                 char* endptr;
                 unsigned long current_num = strtoul(temp_buffer->data, &endptr, 10);
 
-                if(endptr == temp_buffer->data) {
+                if(endptr == temp_buffer->data || current_num > MAX_ARGS_LENGTH) {
                     byte_buffer_destroy(temp_buffer);
                     return STEP_SYNTAX_ERROR;
                 }
