@@ -26,7 +26,9 @@ typedef enum {
 #define MAX_ARGS 50
 #define MAX_ARGS_LENGTH (1024 * 1024) //equivalent in bytes to 1MB
 
-// parses the number of arguments inside the buffer. This is usefull to know what argument we are parsing at a given time
+// Parses the *N header (array length) from the buffer at the current index.
+// Allocates cmd->buffer and cmd->arg_lengths once argc is known. Rejects
+// zero, non-numeric, or over-limit counts (MAX_ARGS) as syntax errors.
 static arg_parse_result get_number_of_args(bool* checking_number_args, const char* buffer, const size_t index, byte_buffer* temp_buffer, parsed_cmd* cmd) {
     if(*checking_number_args) {
         if(buffer[index] != '\n' && buffer[index] != '\r') {
@@ -69,6 +71,10 @@ static arg_parse_result get_number_of_args(bool* checking_number_args, const cha
     return STEP_PROGRESS;
 }
 
+// Parses a single argument's $M length header and its content, one byte
+// at a time. Tracks state via current_state (EXPECTING_LENGTH vs
+// EXPECTING_CONTENT) and temp_byte_count. Handles arg 0 (the command name)
+// as a special case since its length is not tracked in arg_lengths.
 static arg_parse_result parse_argument(bool* checking_arg, const char* buffer, const size_t index, size_t* current_arg, parsed_cmd* cmd, const size_t buffer_len, byte_buffer* temp_buffer, arg_parse_state* current_state, size_t* temp_byte_count) {
     if(*checking_arg) {
         // if its the last arg, its the end of the resp parsing so save the bytes consumed
@@ -160,6 +166,10 @@ static arg_parse_result parse_argument(bool* checking_arg, const char* buffer, c
     return STEP_PROGRESS;
 }
 
+// Entry point: parses a raw RESP buffer into a parsed_cmd. Validates the
+// leading *, drives the byte-by-byte loop via get_number_of_args and
+// parse_argument, and sets cmd->status to PARSE_COMPLETE or PARSE_ERROR
+// once done. Returns NULL only if the initial cmd allocation itself fails.
 parsed_cmd* parse_cmd(char* buffer, size_t buffer_len) {
     if(buffer) {
         parsed_cmd* cmd = malloc(sizeof(parsed_cmd));
@@ -222,6 +232,9 @@ parsed_cmd* parse_cmd(char* buffer, size_t buffer_len) {
     return NULL;
 }
 
+// Frees a parsed_cmd and everything it owns: each argument buffer,
+// arg_lengths, cmd_name, and the struct itself. Safe to call with any
+// combination of fields still NULL (e.g. after an early parse error).
 void free_parsed_cmd(parsed_cmd* cmd) {
     if(cmd) {
         if(cmd->buffer) {
