@@ -15,6 +15,6 @@ typedef struct {
     size_t result_len;
 } cmd_result;
 
-cmd_result execute_cmd(char* cmd_name, char** buffer, size_t argc);
+cmd_result execute_cmd(char* cmd_name, char** buffer, size_t* arg_lengths, size_t argc);
 
 #endif
