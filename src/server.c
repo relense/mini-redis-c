@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include "resp-protocol.h"
 #include "byte-buffer.h"
+#include "commands.h"
 
 #define CONNECTIONS_WAITING 10
 
@@ -106,7 +107,7 @@ void* handle_client(void* args) {
         } else if (cmd->status == PARSE_INCOMPLETE) {
             continue;
         } else {
-            // based on the command decide what should we do, if store, get the info, or delete the info
+            cmd_result cmd_result = execute_cmd(cmd->cmd_name, cmd->buffer, cmd->arg_lengths, cmd->argc);
             
             // then encode the info we want to send the user
             // then send a response with the enconded data back to the user.
