@@ -161,9 +161,14 @@ hash_map* hash_map_put(hash_map* map, char* key, char* value) {
         entry* new_entry = malloc(sizeof(entry));
         if(!new_entry) return NULL;
 
+        char* copied_key = strdup(key);
+        if(!copied_key) return NULL;
+        char* copied_value = strdup(value);
+        if(!copied_value) return NULL;
+
         *new_entry = (entry) {
-            .key = strdup(key),
-            .value = strdup(value),
+            .key = strdup(copied_key),
+            .value = strdup(copied_value),
             .next = NULL,
         };
 
