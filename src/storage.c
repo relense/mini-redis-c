@@ -1,11 +1,23 @@
 #include "storage.h"
 #include <stdbool.h>
 
-void storage_set(const char* key, const char* value, bool* system_error) {
+#include "hash-map.h"
+
+static hash_map map;
+
+void storage_init(void) {
+    hash_map_init(&map, 10);
+}
+
+void storage_destroy(void) {
+    hash_map_destroy(&map);
+}
+
+void storage_set(const char* key, const char* value, size_t value_len, bool* system_error) {
 
 }
 
-char* storage_get(const char* key) {
+storage_result storage_get(const char* key) {
 
 }
 

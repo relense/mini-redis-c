@@ -10,6 +10,7 @@
 #include "resp-protocol.h"
 #include "byte-buffer.h"
 #include "commands.h"
+#include "storage.h"
 
 #define CONNECTIONS_WAITING 10
 
@@ -159,6 +160,7 @@ int main(void) {
     struct addrinfo* server_info;
     int get_addr_info_status;
     int listening_socket_fd;
+    storage_init();
 
     resolve_server_address(&hints, &get_addr_info_status, &server_info);
     create_listening_socket(server_info, &listening_socket_fd);
@@ -166,5 +168,6 @@ int main(void) {
     accept_new_connections(listening_socket_fd);
 
     close(listening_socket_fd);
+    storage_destroy();
     return EXIT_SUCCESS;
 }
