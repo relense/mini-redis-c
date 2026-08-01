@@ -51,15 +51,15 @@ static cmd_result build_error_response(char* cmd_name, error_types error_type) {
     return result;
 }
 
-static cmd_result build_bulk_string(char* message) {
+static cmd_result build_bulk_string(char* message, size_t len) {
     cmd_result result;
 
-    char* copied_message = strdup(message);
+    char* copied_message = to_null_terminated(message, len);
     if(!copied_message) return build_system_error_response();
 
     result = (cmd_result) {
         .result = copied_message,
-        .result_len = strlen(copied_message),
+        .result_len = len,
         .status = BULK_STRING
     };
 
@@ -107,13 +107,13 @@ static cmd_result execute_get(char* cmd_name, char** buffer, size_t* arg_lengths
             return build_system_error_response();
         }
 
-        char* get_result = storage_get(key);
+        storage_result get_result = storage_get(key);
         free(key);
 
-        if(!get_result) {
-            return build_bulk_string("");
+        if(!get_result.value) {
+            return build_bulk_string("", 0);
         } else {
-            return build_bulk_string(get_result);
+            return build_bulk_string(get_result.value, get_result.len);
         }
     }
 }
