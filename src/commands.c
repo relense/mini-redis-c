@@ -35,7 +35,7 @@ static cmd_result build_error_response(char* cmd_name, error_types error_type) {
         snprintf(message, sizeof(message), "%s: unknown command", cmd_name);
     } else if (error_type == TOO_MANY_ARGS) {
         snprintf(message, sizeof(message), "%s: too many args", cmd_name);
-    } else if (error_type == TOO_MANY_ARGS) {
+    } else if (error_type == NOT_ENOUGH_ARGS) {
         snprintf(message, sizeof(message), "%s: not enough args", cmd_name);
     }
 
