@@ -6,7 +6,7 @@ A simplified implementation of Redis in C, built as the capstone project after c
 
 This is a "mini" Redis in the literal sense: it implements a single native data type (string, backed by the hash map from the [systems-programming-journey](https://github.com/relense/systems-programming-journey)) rather than the full range Redis supports (lists, sets, sorted sets, hashes, streams). The goal is to understand the full path from raw bytes on a socket to a command being executed and a response being sent back, not to replicate every feature.
 
-## Planned commands
+## Commands
 
 - `PING`
 - `SET key value`
@@ -15,19 +15,20 @@ This is a "mini" Redis in the literal sense: it implements a single native data 
 
 ## Protocol
 
-Implements a subset of [RESP (REdis Serialization Protocol)](https://redis.io/docs/latest/develop/reference/protocol-spec/): simple strings, simple errors, bulk strings, and arrays. Clients send commands as an array of bulk strings; the server parses the command, executes it against the in-memory store, and encodes the result back into RESP. Follows the simple request-response model (one command per round-trip);
+Implements a subset of [RESP (REdis Serialization Protocol)](https://redis.io/docs/latest/develop/reference/protocol-spec/): simple strings, simple errors, bulk strings, and arrays. Clients send commands as an array of bulk strings; the server parses the command, executes it against the in-memory store, and encodes the result back into RESP. Follows the simple request-response model (one command per round-trip).
 
 ## Architecture
 
 - TCP server (sockets, one thread per client connection)
 - Byte buffer (dynamically growing buffer that accumulates incoming bytes across multiple recv() calls until a complete message is available)
-- RESP parser (decodes accumulated bytes into commands and arguments)
+- RESP parser (decodes accumulated bytes into commands and arguments, binary-safe, with syntax error handling and size limits against malicious input)
+- Command execution (validates argument counts per command, dispatches to storage, builds command results)
 - RESP encoder (formats command results back into valid RESP replies)
 - In-memory storage (thread-safe hash map)
 
 ## Status
 
-RESP parser complete and tested (including binary-safe content, empty strings, and syntax error handling). Currently building the response encoder and command execution layer (SET/GET/DEL against the hash map).
+RESP parser complete and tested (binary-safe content, empty strings, syntax errors, size limits). Command execution layer (PING/SET/GET/DEL) complete with proper memory management. Currently building the storage layer (hash map wrapper) and the RESP encoder to tie everything together.
 
 ## Compile
 
