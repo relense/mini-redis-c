@@ -54,8 +54,9 @@ static cmd_result build_error_response(char* cmd_name, error_types error_type) {
 static cmd_result build_bulk_string(char* message, size_t len) {
     cmd_result result;
 
-    char* copied_message = to_null_terminated(message, len);
+    char* copied_message = malloc(len > 0 ? len : 1);
     if(!copied_message) return build_system_error_response();
+    memcpy(copied_message, message, len);
 
     result = (cmd_result) {
         .result = copied_message,
@@ -100,8 +101,6 @@ static cmd_result execute_get(char* cmd_name, char** buffer, size_t* arg_lengths
     } else if (argc < 1) {
         return build_error_response(cmd_name, NOT_ENOUGH_ARGS);
     } else {
-        cmd_result result;
-
         char* key = to_null_terminated(buffer[0], arg_lengths[0]);
         if(!key) {
             return build_system_error_response();
@@ -134,7 +133,7 @@ static cmd_result execute_set(char* cmd_name, char** buffer, size_t* arg_lengths
             return build_system_error_response();
         }
 
-        storage_set(key, value, &system_error);
+        storage_set(key, value, arg_lengths[1], &system_error);
 
         free(key);
         free(value);
