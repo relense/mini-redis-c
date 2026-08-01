@@ -7,6 +7,7 @@ typedef enum {
     SIMPLE_STRING,
     BULK_STRING,
     SIMPLE_ERROR,
+    NULL_BULK_STRING,
     SYSTEM_ERROR,
 } result_status;
 

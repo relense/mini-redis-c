@@ -67,6 +67,14 @@ static cmd_result build_bulk_string(char* message, size_t len) {
     return result;
 }
 
+static cmd_result build_null_bulk_string() {
+    return (cmd_result) {
+        .result = NULL,
+        .result_len = 0,
+        .status = NULL_BULK_STRING
+    };
+}
+
 static cmd_result build_simple_string(char* message) {
     cmd_result result;
 
@@ -108,6 +116,10 @@ static cmd_result execute_get(char* cmd_name, char** buffer, size_t* arg_lengths
 
         storage_result get_result = storage_get(key);
         free(key);
+
+        if(!get_result.key_exists) {
+             return build_null_bulk_string();
+        }
 
         if(!get_result.value) {
             return build_bulk_string("", 0);
