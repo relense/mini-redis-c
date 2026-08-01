@@ -21,6 +21,19 @@ static char* to_null_terminated(char* value, size_t len) {
     return new_value;
 }
 
+static cmd_result build_system_error_response() {
+    cmd_result result;
+    char* message = strdup("");
+
+    result = (cmd_result) {
+        .result = message,
+        .result_len = 0,
+        .status = SYSTEM_ERROR
+    };
+
+    return result;
+}
+
 static cmd_result build_error_response(char* cmd_name, error_types error_type) {
     cmd_result result;
     char message[256];
@@ -79,19 +92,6 @@ static cmd_result build_simple_string(char* message) {
         .result = copied_message,
         .result_len = strlen(copied_message),
         .status = SIMPLE_STRING
-    };
-
-    return result;
-}
-
-static cmd_result build_system_error_response() {
-    cmd_result result;
-    char* message = strdup("");
-
-    result = (cmd_result) {
-        .result = message,
-        .result_len = 0,
-        .status = SYSTEM_ERROR
     };
 
     return result;
