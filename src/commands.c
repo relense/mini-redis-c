@@ -2,7 +2,8 @@
 #include "storage.h"
 
 #include <stdlib.h>
-#include <string.h>
+#include <strings.h> // for strcasecmp
+#include <string.h> // for strlen, strdup, memcpy, strcmp
 
 typedef enum {
     TOO_MANY_ARGS,
@@ -133,16 +134,9 @@ static cmd_result execute_set(char* cmd_name, char** buffer, size_t* arg_lengths
         if(!key) {
             return build_system_error_response();
         }
-        char* value = to_null_terminated(buffer[1], arg_lengths[1]);
-        if(!value) {
-            free(key);
-            return build_system_error_response();
-        }
-
-        storage_set(key, value, arg_lengths[1], &system_error);
+        storage_set(key, buffer[1], arg_lengths[1], &system_error);
 
         free(key);
-        free(value);
 
         if(system_error) {
             return build_system_error_response();
