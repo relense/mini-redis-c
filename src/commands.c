@@ -130,6 +130,7 @@ static cmd_result execute_set(char* cmd_name, char** buffer, size_t* arg_lengths
         }
         char* value = to_null_terminated(buffer[1], arg_lengths[1]);
         if(!value) {
+            free(key);
             return build_system_error_response();
         }
 
