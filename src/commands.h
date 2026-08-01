@@ -7,6 +7,7 @@ typedef enum {
     SIMPLE_STRING,
     BULK_STRING,
     SIMPLE_ERROR,
+    SYSTEM_ERROR,
 } result_status;
 
 typedef struct {
@@ -16,5 +17,6 @@ typedef struct {
 } cmd_result;
 
 cmd_result execute_cmd(char* cmd_name, char** buffer, size_t* arg_lengths, size_t argc);
+void free_cmd(cmd_result cmd);
 
 #endif
