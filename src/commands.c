@@ -5,13 +5,6 @@
 #include <string.h>
 
 typedef enum {
-    GET,
-    SET,
-    DEL,
-    PING
-} available_cmds;
-
-typedef enum {
     TOO_MANY_ARGS,
     NOT_ENOUGH_ARGS,
     CMD_UNKNOWN,
