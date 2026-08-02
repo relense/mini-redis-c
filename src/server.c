@@ -117,7 +117,6 @@ void* handle_client(void* args) {
             }
 
             encoded_resp resp = encode_resp(cmd_result);
-
             send(new_file_descriptor, resp.resp, resp.bytes_encoded, 0);
 
             free_encoded_resp(resp);
