@@ -33,7 +33,7 @@ void free_parsed_cmd(parsed_cmd* cmd);
 
 //encode_operations
 encoded_resp encode_resp(cmd_result* cmd);
-void free_encoded_resp(encoded_resp* resp);
+void free_encoded_resp(encoded_resp resp);
 
 #endif
 

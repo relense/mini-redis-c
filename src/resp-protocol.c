@@ -339,8 +339,6 @@ encoded_resp encode_resp(cmd_result* cmd) {
     };
 }
 
-void free_encoded_resp(encoded_resp* resp) {
-    if(resp) {
-        free(resp->resp);
-    }
+void free_encoded_resp(encoded_resp resp) {
+    free(resp.resp);
 }
