@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <pthread.h>
 
 typedef struct entry entry;
 
@@ -17,6 +18,7 @@ typedef struct {
     size_t len;
     size_t cap;
     entry** buckets;
+    pthread_mutex_t hash_map_mutex;
 } hash_map;
 
 typedef struct {

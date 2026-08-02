@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <pthread.h>
 
 static size_t hash(char* string) {
     size_t result = 5381;
@@ -109,43 +110,53 @@ static void entry_destroy(entry* head) {
     }
 }
 
-hash_map* hash_map_init(hash_map* map, size_t cap) {
-    if(map) {
-        if(cap) {
-            *map = (hash_map) {
-                .cap = cap,
-                .buckets = malloc(sizeof(entry*[cap]))
-            };
-
-            if(!map->buckets) {
-                map->cap = 0;
-                return NULL;
-            }
-
-            for(size_t i = 0; i < cap; i++) {
-                map->buckets[i] = NULL;
-            }
-        } else {
-            *map = (hash_map) { };
-        }
-    }
-
-    return map;
-}
-
 void hash_map_destroy(hash_map* map) {
     if(map) {
+        pthread_mutex_lock(&map->hash_map_mutex);
+
         for(size_t i = 0; i < map->cap; i++) {
             entry_destroy(map->buckets[i]);
         }
 
         free(map->buckets);
         *map = (hash_map) {};
+
+        pthread_mutex_unlock(&map->hash_map_mutex);
+        pthread_mutex_destroy(&map->hash_map_mutex);
     }
+}
+
+hash_map* hash_map_init(hash_map* map, size_t cap) {
+    if(map) {
+        size_t actual_cap = (cap == 0) ? 16 : cap;
+
+        *map = (hash_map) {
+            .cap = actual_cap,
+            .buckets = malloc(sizeof(entry*[actual_cap]))
+        };
+
+        if(!map->buckets) {
+            map->cap = 0;
+            return NULL;
+        }
+
+        for(size_t i = 0; i < actual_cap; i++) {
+            map->buckets[i] = NULL;
+        }
+
+        if(pthread_mutex_init(&map->hash_map_mutex, NULL) != 0) {
+            hash_map_destroy(map);
+            return NULL;
+        }
+    }
+
+    return map;
 }
 
 hash_map* hash_map_put(hash_map* map, char* key, char* value, size_t value_len) {
     if(map) {
+        pthread_mutex_lock(&map->hash_map_mutex);
+        
         entry* searched_entry = get_entry(map, key);
         
         if(searched_entry) {
@@ -153,28 +164,47 @@ hash_map* hash_map_put(hash_map* map, char* key, char* value, size_t value_len) 
             free(old_value);
 
             char* new_value = malloc(value_len > 0 ? value_len : 1);
-            if(!new_value) return NULL;
+            if(!new_value) {
+                pthread_mutex_unlock(&map->hash_map_mutex);
+                return NULL;
+            }
 
             memcpy(new_value, value, value_len);
             searched_entry->value = new_value;
             searched_entry->value_len = value_len;
 
+            pthread_mutex_unlock(&map->hash_map_mutex);
             return map;
         }
 
         double load_factor = (double) map->len / map->cap;
         if(load_factor > 0.75) {
-            if(!hash_map_resize(map)) return NULL;
+            if(!hash_map_resize(map)) {
+                pthread_mutex_unlock(&map->hash_map_mutex);
+                return NULL;
+            }
         }
 
         entry* new_entry = malloc(sizeof(entry));
-        if(!new_entry) return NULL;
+        if(!new_entry) {
+            pthread_mutex_unlock(&map->hash_map_mutex);
+            return NULL;
+        }
 
         char* copied_key = strdup(key);
-        if(!copied_key) return NULL;
+        if(!copied_key) {
+            free(new_entry);
+            pthread_mutex_unlock(&map->hash_map_mutex);
+            return NULL;
+        }
 
         char* copied_value = malloc(value_len > 0 ? value_len : 1);
-        if(!copied_value) return NULL;
+        if(!copied_value) {
+            free(copied_key);
+            free(new_entry);
+            pthread_mutex_unlock(&map->hash_map_mutex);
+            return NULL;
+        }
 
         memcpy(copied_value, value, value_len);
 
@@ -185,9 +215,13 @@ hash_map* hash_map_put(hash_map* map, char* key, char* value, size_t value_len) 
             .next = NULL,
         };
 
-        if(!hash_map_insert(map, new_entry)) return NULL;
+        if(!hash_map_insert(map, new_entry)) {
+            pthread_mutex_unlock(&map->hash_map_mutex);
+            return NULL;
+        }
         map->len++;
 
+        pthread_mutex_unlock(&map->hash_map_mutex);
         return map;
     }
 
@@ -196,7 +230,12 @@ hash_map* hash_map_put(hash_map* map, char* key, char* value, size_t value_len) 
 
 bool hash_map_remove(hash_map* map, char* key) {
     if(map) {
-        if(!get_entry(map, key)) return false;
+        pthread_mutex_lock(&map->hash_map_mutex);
+
+        if(!get_entry(map, key)) {
+            pthread_mutex_unlock(&map->hash_map_mutex);
+            return false;
+        }
 
         size_t bucket_index = hash(key) % map->cap;
         entry* to_remove = map->buckets[bucket_index];
@@ -220,6 +259,7 @@ bool hash_map_remove(hash_map* map, char* key) {
         free(to_remove);
         map->len--;
 
+        pthread_mutex_unlock(&map->hash_map_mutex);
         return true;
     }
 
@@ -228,15 +268,37 @@ bool hash_map_remove(hash_map* map, char* key) {
 
 entry_result hash_map_get(hash_map* map, char* key) {
     if(map) {
+        pthread_mutex_lock(&map->hash_map_mutex);
+
         entry* entry_elem = get_entry(map, key);
-        if(!entry_elem) return (entry_result) {
-            .value = NULL,
-            .value_len = 0
-        };
+
+        if(!entry_elem) {
+            pthread_mutex_unlock(&map->hash_map_mutex);
+
+            return (entry_result) {
+                .value = NULL,
+                .value_len = 0
+            };
+        }
+
+        char* value = malloc(entry_elem->value_len > 0 ? entry_elem->value_len : 1);
+        if(!value) {
+            pthread_mutex_unlock(&map->hash_map_mutex);
+
+            return (entry_result) {
+                .value = NULL,
+                .value_len = 0
+            };
+        }
+
+        value = memcpy(value, entry_elem->value, entry_elem->value_len);
+        size_t value_len = entry_elem->value_len;
+    
+        pthread_mutex_unlock(&map->hash_map_mutex);
 
         return (entry_result) {
-            .value = entry_elem->value,
-            .value_len = entry_elem->value_len
+            .value = value,
+            .value_len = value_len
         };
     }
 
