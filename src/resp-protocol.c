@@ -258,85 +258,80 @@ void free_parsed_cmd(parsed_cmd* cmd) {
     } 
 }
 
-encoded_resp encode_resp(cmd_result* cmd) {
-    if(cmd) {
-        encoded_resp resp;
+encoded_resp encode_resp(cmd_result cmd) {
+    
+    encoded_resp resp;
 
-        if(cmd->status == SIMPLE_STRING) {
-            size_t bytes = cmd->result_len + 4;
-            char* value = malloc(bytes);
-            if(!value) {
-                 return (encoded_resp) {
-                    .bytes_encoded = 0,
-                    .resp =  NULL,
-                };
-            }
-
-            snprintf(value, bytes, "+%s\r\n", cmd->result);
-
-            resp.resp = value;
-            resp.bytes_encoded = bytes - 1;
-        } else if(cmd->status == SIMPLE_ERROR) {
-            size_t bytes = cmd->result_len + 10;
-            char* value = malloc(bytes);
-            if(!value) {
-                 return (encoded_resp) {
-                    .bytes_encoded = 0,
-                    .resp =  NULL,
-                };
-            }
-
-            snprintf(value, bytes, "-Error %s\r\n", cmd->result);
-
-            resp.resp = value;
-            resp.bytes_encoded = bytes - 1;
-        } else if(cmd->status == BULK_STRING) {
-            int arg_len_bytes = snprintf(NULL, 0, "$%zu\r\n", cmd->result_len);
-            size_t total_bytes = arg_len_bytes + cmd->result_len + 2;
-
-            char* value = malloc(total_bytes);
-            if(!value) {
-                 return (encoded_resp) {
-                    .bytes_encoded = 0,
-                    .resp =  NULL,
-                };
-            }
-
-            snprintf(value, total_bytes, "$%zu\r\n", cmd->result_len);
-            memcpy(value + arg_len_bytes, cmd->result, cmd->result_len);
-            value[total_bytes - 2] = '\r';
-            value[total_bytes - 1] = '\n';
-
-            resp.resp = value;
-            resp.bytes_encoded = total_bytes;
-        } else if(cmd->status == NULL_BULK_STRING) {
-            size_t bytes = 5;
-            char* value = malloc(bytes);
-             if(!value) {
-                 return (encoded_resp) {
-                    .bytes_encoded = 0,
-                    .resp =  NULL,
-                };
-            }
-
-            memcpy(value, "$-1\r\n", bytes);
-
-            resp.resp = value;
-            resp.bytes_encoded = bytes;
-        } else {
-            return (encoded_resp) {
+    if(cmd.status == SIMPLE_STRING) {
+        size_t bytes = cmd.result_len + 4;
+        char* value = malloc(bytes);
+        if(!value) {
+                return (encoded_resp) {
                 .bytes_encoded = 0,
                 .resp =  NULL,
             };
         }
 
-        return resp;
+        snprintf(value, bytes, "+%s\r\n", cmd.result);
+
+        resp.resp = value;
+        resp.bytes_encoded = bytes - 1;
+    } else if(cmd.status == SIMPLE_ERROR) {
+        size_t bytes = cmd.result_len + 10;
+        char* value = malloc(bytes);
+        if(!value) {
+                return (encoded_resp) {
+                .bytes_encoded = 0,
+                .resp =  NULL,
+            };
+        }
+
+        snprintf(value, bytes, "-Error %s\r\n", cmd.result);
+
+        resp.resp = value;
+        resp.bytes_encoded = bytes - 1;
+    } else if(cmd.status == BULK_STRING) {
+        int arg_len_bytes = snprintf(NULL, 0, "$%zu\r\n", cmd.result_len);
+        size_t total_bytes = arg_len_bytes + cmd.result_len + 2;
+
+        char* value = malloc(total_bytes);
+        if(!value) {
+                return (encoded_resp) {
+                .bytes_encoded = 0,
+                .resp =  NULL,
+            };
+        }
+
+        snprintf(value, total_bytes, "$%zu\r\n", cmd.result_len);
+        memcpy(value + arg_len_bytes, cmd.result, cmd.result_len);
+        value[total_bytes - 2] = '\r';
+        value[total_bytes - 1] = '\n';
+
+        resp.resp = value;
+        resp.bytes_encoded = total_bytes;
+    } else if(cmd.status == NULL_BULK_STRING) {
+        size_t bytes = 5;
+        char* value = malloc(bytes);
+            if(!value) {
+                return (encoded_resp) {
+                .bytes_encoded = 0,
+                .resp =  NULL,
+            };
+        }
+
+        memcpy(value, "$-1\r\n", bytes);
+
+        resp.resp = value;
+        resp.bytes_encoded = bytes;
+    } else {
+        return (encoded_resp) {
+            .bytes_encoded = 0,
+            .resp =  NULL,
+        };
     }
 
-    return (encoded_resp) {
-        .bytes_encoded = 0,
-        .resp =  NULL,
-    };
+    return resp;
+
 }
 
 void free_encoded_resp(encoded_resp resp) {
