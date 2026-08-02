@@ -7,7 +7,7 @@
 typedef struct {
     bool key_exists;
     char* value;
-    size_t len;
+    size_t value_len;
 } storage_result;
 
 void storage_init(void);
