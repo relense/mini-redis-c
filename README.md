@@ -23,12 +23,12 @@ Implements a subset of [RESP (REdis Serialization Protocol)](https://redis.io/do
 - Byte buffer (dynamically growing buffer that accumulates incoming bytes across multiple recv() calls until a complete message is available)
 - RESP parser (decodes accumulated bytes into commands and arguments, binary-safe, with syntax error handling and size limits against malicious input)
 - Command execution (validates argument counts per command, dispatches to storage, builds command results)
-- RESP encoder (formats command results back into valid RESP replies)
-- In-memory storage (thread-safe hash map)
+- RESP encoder (formats command results back into valid RESP replies, binary-safe for bulk strings)
+- In-memory storage (thread-safe hash map, mutex-protected against concurrent access)
 
 ## Status
 
-RESP parser complete and tested (binary-safe content, empty strings, syntax errors, size limits). Command execution layer (PING/SET/GET/DEL) complete with proper memory management. Currently building the storage layer (hash map wrapper) and the RESP encoder to tie everything together.
+Feature-complete: RESP protocol (binary-safe parsing and encoding, syntax error handling, size limits against malicious input), all four commands (PING/SET/GET/DEL) with proper argument validation, thread-safe in-memory storage, and correct memory management across every layer, verified end-to-end with redis-cli and hex-level inspection of binary payloads. Automated test suite planned as a follow-up.
 
 ## Compile
 
@@ -71,5 +71,5 @@ gcc -Wall -Wextra -Werror -std=c17 -fsanitize=address -g -o mini-redis.out src/*
   ## Run
 
 ```bash
-   ./mini-redis
+   ./mini-redis.out
 ```
