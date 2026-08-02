@@ -109,7 +109,7 @@ void* handle_client(void* args) {
             continue;
         } else {
             //THERE IS A CHANCE THAT CMD_RESULT MIGHT BE NULL. IF THAT IS the case we need to deal with it either in the encode or somewhere.
-            cmd_result cmd_result = execute_cmd(cmd->cmd_name, cmd->buffer, cmd->arg_lengths, cmd->argc);
+            execute_cmd(cmd->cmd_name, cmd->buffer, cmd->arg_lengths, cmd->argc);
             
             // then encode the info we want to send the user
             // then send a response with the enconded data back to the user.

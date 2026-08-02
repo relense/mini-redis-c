@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <pthread.h>
 
-static size_t hash(char* string) {
+static size_t hash(const char* string) {
     size_t result = 5381;
     size_t string_length = strlen(string);
 
@@ -77,7 +77,7 @@ static hash_map* hash_map_resize(hash_map* map) {
     return NULL;
 }
 
-static entry* get_entry(hash_map* map, char* key) {
+static entry* get_entry(hash_map* map, const char* key) {
     if(map) {
         size_t bucket_index = hash(key) % map->cap;
         entry* current_entry = map->buckets[bucket_index];
@@ -153,7 +153,7 @@ hash_map* hash_map_init(hash_map* map, size_t cap) {
     return map;
 }
 
-hash_map* hash_map_put(hash_map* map, char* key, char* value, size_t value_len) {
+hash_map* hash_map_put(hash_map* map, const char* key, const char* value, size_t value_len) {
     if(map) {
         pthread_mutex_lock(&map->hash_map_mutex);
         
@@ -228,7 +228,7 @@ hash_map* hash_map_put(hash_map* map, char* key, char* value, size_t value_len) 
     return NULL;
 }
 
-bool hash_map_remove(hash_map* map, char* key) {
+bool hash_map_remove(hash_map* map, const char* key) {
     if(map) {
         pthread_mutex_lock(&map->hash_map_mutex);
 
@@ -266,7 +266,7 @@ bool hash_map_remove(hash_map* map, char* key) {
     return false;
 }
 
-entry_result hash_map_get(hash_map* map, char* key) {
+entry_result hash_map_get(hash_map* map, const char* key) {
     if(map) {
         pthread_mutex_lock(&map->hash_map_mutex);
 
