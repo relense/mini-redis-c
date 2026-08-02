@@ -113,13 +113,13 @@ static cmd_result execute_get(char* cmd_name, char** buffer, size_t* arg_lengths
 
         if(!get_result.key_exists) {
              return build_null_bulk_string();
+        } else {
+            cmd_result result = build_bulk_string(get_result.value, get_result.value_len);
+            
+            free(get_result.value);
+            return result;
         }
 
-        if(!get_result.value) {
-            return build_bulk_string("", 0);
-        } else {
-            return build_bulk_string(get_result.value, get_result.value_len);
-        }
     }
 }
 
