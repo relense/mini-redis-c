@@ -9,6 +9,7 @@ typedef struct entry entry;
 struct entry {
     char* key;
     char* value;
+    size_t value_len;
     entry* next;
 };
 
@@ -18,11 +19,16 @@ typedef struct {
     entry** buckets;
 } hash_map;
 
+typedef struct {
+    char* value;
+    size_t value_len;
+} entry_result;
+
 hash_map* hash_map_init(hash_map* map, size_t cap);
 void hash_map_destroy(hash_map* map);
 
-hash_map* hash_map_put(hash_map* map, char* key, char* value);
-bool hash_map_remove(hash_map* map, char* key);
-char* hash_map_get(hash_map* map, char* key);
+hash_map* hash_map_put(hash_map* map, const char* key, const char* value, size_t value_len);
+bool hash_map_remove(hash_map* map, const char* key);
+entry_result hash_map_get(hash_map* map, const char* key);
 
 #endif

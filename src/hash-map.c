@@ -144,12 +144,21 @@ void hash_map_destroy(hash_map* map) {
     }
 }
 
-hash_map* hash_map_put(hash_map* map, char* key, char* value) {
+hash_map* hash_map_put(hash_map* map, char* key, char* value, size_t value_len) {
     if(map) {
         entry* searched_entry = get_entry(map, key);
         
         if(searched_entry) {
-            searched_entry->value = value;
+            char* old_value = searched_entry->value;
+            free(old_value);
+
+            char* new_value = malloc(value_len > 0 ? value_len : 1);
+            if(!new_value) return NULL;
+
+            memcpy(new_value, value, value_len);
+            searched_entry->value = new_value;
+            searched_entry->value_len = value_len;
+
             return map;
         }
 
@@ -163,12 +172,16 @@ hash_map* hash_map_put(hash_map* map, char* key, char* value) {
 
         char* copied_key = strdup(key);
         if(!copied_key) return NULL;
-        char* copied_value = strdup(value);
+
+        char* copied_value = malloc(value_len > 0 ? value_len : 1);
         if(!copied_value) return NULL;
 
+        memcpy(copied_value, value, value_len);
+
         *new_entry = (entry) {
-            .key = strdup(copied_key),
-            .value = strdup(copied_value),
+            .key = copied_key,
+            .value = copied_value,
+            .value_len = value_len,
             .next = NULL,
         };
 
@@ -190,10 +203,6 @@ bool hash_map_remove(hash_map* map, char* key) {
 
         if(!strcmp(to_remove->key, key)) {
             map->buckets[bucket_index] = to_remove->next;
-
-            free(to_remove->key);
-            free(to_remove->value);
-            free(to_remove);
         } else {
             entry* prev = NULL;
 
@@ -204,11 +213,11 @@ bool hash_map_remove(hash_map* map, char* key) {
             }
 
             prev->next = to_remove->next;
-
-            free(to_remove->key);
-            free(to_remove);
         }
 
+        free(to_remove->key);
+        free(to_remove->value);
+        free(to_remove);
         map->len--;
 
         return true;
@@ -217,13 +226,22 @@ bool hash_map_remove(hash_map* map, char* key) {
     return false;
 }
 
-char* hash_map_get(hash_map* map, char* key) {
+entry_result hash_map_get(hash_map* map, char* key) {
     if(map) {
         entry* entry_elem = get_entry(map, key);
-        if(!entry_elem) return NULL;
+        if(!entry_elem) return (entry_result) {
+            .value = NULL,
+            .value_len = 0
+        };
 
-        return entry_elem->value;
+        return (entry_result) {
+            .value = entry_elem->value,
+            .value_len = entry_elem->value_len
+        };
     }
 
-    return NULL;
+    return (entry_result) {
+        .value = NULL,
+        .value_len = 0
+    };
 }
