@@ -109,11 +109,19 @@ void* handle_client(void* args) {
             continue;
         } else {
             //THERE IS A CHANCE THAT CMD_RESULT MIGHT BE NULL. IF THAT IS the case we need to deal with it either in the encode or somewhere.
-            execute_cmd(cmd->cmd_name, cmd->buffer, cmd->arg_lengths, cmd->argc);
-            
-            // then encode the info we want to send the user
-            // then send a response with the enconded data back to the user.
-            // this is to be done after we have the resp protocol and the hashmap implemented.
+            cmd_result cmd_result = execute_cmd(cmd->cmd_name, cmd->buffer, cmd->arg_lengths, cmd->argc);
+
+            if(cmd_result.status == SYSTEM_ERROR) {
+                free_cmd(cmd_result);
+                break;
+            }
+
+            encoded_resp resp = encode_resp(cmd_result);
+
+            send(new_file_descriptor, resp.resp, resp.bytes_encoded, 0);
+
+            free_encoded_resp(resp);
+            free_cmd(cmd_result);
             break;
         }
     }
