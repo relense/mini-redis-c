@@ -28,7 +28,7 @@ Implements a subset of [RESP (REdis Serialization Protocol)](https://redis.io/do
 
 ## Status
 
-Feature-complete: RESP protocol (binary-safe parsing and encoding, syntax error handling, size limits against malicious input), all four commands (PING/SET/GET/DEL) with proper argument validation, thread-safe in-memory storage, and correct memory management across every layer, verified end-to-end with redis-cli and hex-level inspection of binary payloads. Automated test suite planned as a follow-up.
+Feature-complete: RESP protocol (binary-safe parsing and encoding, syntax error handling, size limits against malicious input), all four commands (PING/SET/GET/DEL) with proper argument validation, thread-safe in-memory storage, and correct memory management across every layer, verified end-to-end with redis-cli and hex-level inspection of binary payloads.
 
 ## Compile
 
